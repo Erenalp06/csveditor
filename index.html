@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f9fc">
+  <meta name="description" content="CSV metnini yapıştır, anında tablo olarak görüntüle.">
+  <title>CSV Editör</title>
+  <style>
+    :root{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#203049;background:#f7f9fc;font-synthesis:none}
+    *{box-sizing:border-box}body{margin:0;min-width:320px}button,select,textarea{font:inherit}button{cursor:pointer}
+    button:disabled{cursor:not-allowed;opacity:.5}[hidden]{display:none!important}
+    .app{width:min(1530px,100%);min-height:100vh;margin:0 auto;padding:30px clamp(15px,3vw,46px);display:flex;flex-direction:column}
+    .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:28px}
+    .brand{display:flex;align-items:center;gap:12px}.logo{width:44px;height:44px;display:grid;place-items:center;border-radius:13px;background:#5365e9;color:#fff;font-size:22px;font-weight:750;letter-spacing:-1px;box-shadow:0 6px 16px #5565e82b}
+    h1,h2,h3,p{margin:0}h1{font-size:21px;letter-spacing:-.5px}.brand p{font-size:12px;color:#8896aa;margin-top:2px}
+    .privacy{font-size:12px;color:#67788c;background:#fff;border:1px solid #e6ebf2;border-radius:99px;padding:9px 13px;white-space:nowrap}.privacy:before{content:"";display:inline-block;vertical-align:1px;background:#29b69c;width:7px;height:7px;border-radius:50%;margin-right:8px}
+    main{flex:1;min-height:610px;display:grid;grid-template-columns:minmax(280px,.95fr) minmax(350px,1.05fr);gap:20px}
+    .panel{min-height:520px;min-width:0;display:flex;flex-direction:column;border:1px solid #e4eaf3;background:white;border-radius:16px;box-shadow:0 8px 24px #25334b0b;overflow:hidden}
+    .panel-top{min-height:125px;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:24px}.eyebrow{font-size:10px;font-weight:800;letter-spacing:1.4px;color:#6271d9;margin-bottom:8px}
+    h2{font-size:20px;letter-spacing:-.5px}.description{font-size:12px;color:#8c98aa;margin-top:7px;line-height:1.5}
+    .select-label{display:flex;flex-direction:column;gap:6px;font-size:11px;color:#778398;white-space:nowrap}select{background:#fff;border:1px solid #dfe6f0;padding:9px;border-radius:8px;color:#33435b;font-size:12px;max-width:150px}
+    .editor-wrap{flex:1;min-height:280px;display:flex;padding:0 15px 15px}textarea{width:100%;min-height:280px;resize:none;outline:0;background:#fbfcff;border:1px solid #e1e8f0;border-radius:10px;padding:18px;color:#33445d;font:13px/1.85 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre;tab-size:4}
+    textarea::placeholder{color:#b0bdce}textarea:focus{border-color:#aab7f4;box-shadow:0 0 0 3px #6475fa12}select:focus-visible,button:focus-visible{outline:2px solid #6577e7;outline-offset:2px}
+    .panel-bottom{min-height:60px;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid #edf0f6}
+    .muted{font-size:11px;color:#94a0b0;line-height:1.4}.controls{display:flex;gap:7px}
+    button{border:0;border-radius:9px;padding:10px 13px;font-size:12px;font-weight:650;white-space:nowrap}button.ghost{background:#f0f4fa;color:#607088}button.ghost:hover{background:#e8edf6}button.main{background:#5365e9;color:white;box-shadow:0 4px 12px #5365e91f}button.main:hover:not(:disabled){background:#4456d6}
+    .meta{background:#fbfcff;border-top:1px solid #edf1f7;border-bottom:1px solid #edf1f7;min-height:45px;display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:10px 20px;color:#8794a5;font-size:12px}.meta strong{color:#2d3f58}.divider{height:13px;width:1px;background:#dce3ef}.mode{margin-left:auto}
+    .result{flex:1;min-height:250px;min-width:0;display:flex;flex-direction:column;overflow:hidden}.empty{text-align:center;margin:auto;max-width:270px;padding:35px 14px}.empty h3{font-size:15px;margin-bottom:9px}.empty p{font-size:12px;color:#98a4b4;line-height:1.6}
+    .dots{display:grid;grid-template-columns:repeat(3,24px);gap:5px;justify-content:center;transform:rotate(-5deg);margin-bottom:24px}.dots i{display:block;width:24px;height:21px;border-radius:4px;background:#eef1ff;border:1px solid #dce1ff}.dots i:nth-child(-n+3){background:#7b87ee;border-color:#7b87ee}
+    .error{margin:23px;padding:15px;border:1px solid #ffd2cc;border-radius:10px;background:#fff2f0;color:#a64238;font-size:12px;line-height:1.6}
+    .table-wrap{width:100%;min-width:0;flex:1;max-height:calc(100vh - 310px);overflow:auto;scrollbar-color:#c8d3e5 transparent}
+    table{border-collapse:separate;border-spacing:0;width:100%;font-size:12px;text-align:left}th,td{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:350px;padding:12px 15px;border-right:1px solid #f0f2f6;border-bottom:1px solid #ebeff5}
+    thead th{position:sticky;top:0;z-index:2;background:#f8faff;color:#51607c;font-weight:750}td{color:#526178}tbody tr:nth-child(even){background:#fbfcff}tbody tr:hover{background:#f3f5ff}
+    .index{width:52px;min-width:52px;max-width:52px;position:sticky;left:0;text-align:center;z-index:1;color:#9da8b9;background:#fff;font-weight:600}thead .index{z-index:3;background:#f8faff}tbody tr:nth-child(even) .index{background:#fbfcff}
+    .footer{text-align:center;padding-top:22px;font-size:11px;color:#9ba7b8}
+    .sr-only{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+    @media(max-width:970px){main{grid-template-columns:1fr;min-height:0}.panel{min-height:420px}.editor-wrap{min-height:290px}.table-wrap{max-height:490px}}
+    @media(max-width:560px){.app{padding-top:17px}.top{margin-bottom:19px}.logo{width:41px;height:41px}h1{font-size:19px}.privacy{font-size:0;padding:9px}.privacy:before{margin-right:0}.panel-top{padding:19px 16px;min-height:107px}.panel-top h2{font-size:18px}.panel-top .description{font-size:11px}.panel-bottom{padding:12px 15px}.select-label select{max-width:126px}.meta{padding:12px 15px}.mode{margin-left:0}main{gap:14px}th,td{padding:11px}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="top"><div class="brand"><div class="logo" aria-hidden="true">{;}</div><div><h1>CSV Editör</h1><p>CSV'den tabloya, anında.</p></div></div><div class="privacy">Verilerin yalnızca tarayıcında işlenir</div></header>
+    <main>
+      <section class="panel" aria-labelledby="source-title">
+        <div class="panel-top"><div><div class="eyebrow">01 / GİRİŞ</div><h2 id="source-title">CSV verisi</h2><p class="description">Metni yapıştır; tablo otomatik oluşsun.</p></div><label class="select-label" for="delimiter">Ayırıcı<select id="delimiter"><option value="auto">Otomatik</option><option value=",">Virgül (,)</option><option value=";">Noktalı virgül (;)</option><option value="tab">Sekme (Tab)</option><option value="|">Dikey çizgi (|)</option></select></label></div>
+        <div class="editor-wrap"><label class="sr-only" for="csv">CSV içeriği</label><textarea id="csv" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="ad,şehir,meslek&#10;Ayşe,Ankara,Mühendis&#10;Mehmet,İstanbul,Tasarımcı"></textarea></div>
+        <div class="panel-bottom"><span class="muted">İlk satır sütun başlığı olarak kullanılır.</span><div class="controls"><button class="ghost" id="sample" type="button">Örnek yükle</button><button class="ghost" id="clear" type="button">Temizle</button></div></div>
+      </section>
+      <section class="panel" aria-labelledby="table-title">
+        <div class="panel-top"><div><div class="eyebrow">02 / ÖNİZLEME</div><h2 id="table-title">Tablo görünümü</h2><p class="description">CSV içeriğinin düzenli tablo hali.</p></div><button class="main" type="button" id="copy" disabled>Tabloyu kopyala</button></div>
+        <div class="meta" aria-live="polite"><span><strong id="rows">0</strong> veri satırı</span><span class="divider"></span><span><strong id="cols">0</strong> sütun</span><span id="separator" class="mode">Ayırıcı: —</span></div>
+        <div class="result"><div id="empty" class="empty"><div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><h3>Tablon burada görünecek</h3><p>Soldaki alana CSV verisini yapıştırarak başlayabilirsin.</p></div><div id="error" class="error" role="alert" hidden></div><div id="table-wrap" class="table-wrap" hidden><table aria-label="CSV tablo önizlemesi"><thead id="head"></thead><tbody id="body"></tbody></table></div></div>
+        <div class="panel-bottom"><span class="muted" id="note" aria-live="polite">Henüz CSV verisi yok.</span><button class="ghost" type="button" id="more" hidden>400 satır daha göster</button></div>
+      </section>
+    </main>
+    <footer class="footer">Kurulum yok. Üyelik yok. Sunucuya yükleme yok. Sadece CSV ve tablo.</footer>
+  </div>
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const state = { rows: [], columns: 0, displayed: 0 };
+const pageSize = 400;
+let debounce;
+function detectDelimiter(text) {
+  const choices = [',', ';', '\t', '|'];
+  const samples = [];
+  let counts = [0, 0, 0, 0], quoted = false, hasCharacters = false;
+  for (let i = 0; i < text.length && i < 20000 && samples.length < 12; i++) {
+    const ch = text[i];
+    if (ch === '"') {
+      hasCharacters = true;
+      if (quoted && text[i + 1] === '"') { i++; continue; }
+      quoted = !quoted;
+      continue;
+    }
+    if (!quoted && (ch === '\n' || ch === '\r')) {
+      if (hasCharacters) samples.push(counts);
+      counts = [0, 0, 0, 0]; hasCharacters = false;
+      if (ch === '\r' && text[i + 1] === '\n') i++;
+      continue;
+    }
+    if (!quoted) {
+      const at = choices.indexOf(ch);
+      if (at >= 0) counts[at]++;
+    }
+    if (!/\s/.test(ch) || ch === '\t') hasCharacters = true;
+  }
+  if (hasCharacters) samples.push(counts);
+  let best = ',', bestScore = -Infinity;
+  choices.forEach((choice, index) => {
+    const numbers = samples.map(row => row[index]);
+    const present = numbers.filter(n => n > 0);
+    if (!present.length) return;
+    const frequencies = new Map();
+    present.forEach(n => frequencies.set(n, (frequencies.get(n) || 0) + 1));
+    let mode = present[0];
+    frequencies.forEach((count, n) => { if (count > frequencies.get(mode)) mode = n; });
+    const penalty = numbers.reduce((sum, n) => sum + Math.abs(n - mode), 0);
+    const score = present.length * 12 + (present.length === samples.length ? 16 : 0) + mode * 2 - penalty * 6;
+    if (score > bestScore) { bestScore = score; best = choice; }
+  });
+  return best;
+}
+function parseCSV(raw, choice = 'auto') {
+  const text = raw.replace(/^\uFEFF/, '');
+  const delimiter = choice === 'auto' ? detectDelimiter(text) : choice;
+  if (!text.trim()) return { rows: [], delimiter };
+  const rows = [];
+  let row = [], cell = '', quoted = false;
+  function finishRow() {
+    row.push(cell);
+    if (row.length > 1 || row.some(value => value.trim() !== '')) rows.push(row);
+    row = []; cell = '';
+  }
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+      else if (ch === '"') quoted = false;
+      else cell += ch;
+    } else if (ch === '"' && cell === '') quoted = true;
+    else if (ch === delimiter) { row.push(cell); cell = ''; }
+    else if (ch === '\n' || ch === '\r') { finishRow(); if (ch === '\r' && text[i + 1] === '\n') i++; }
+    else cell += ch;
+  }
+  if (quoted) throw new Error('Kapanmamış tırnak işareti var. CSV içeriğini kontrol et.');
+  if (row.length || cell !== '') finishRow();
+  return { rows, delimiter };
+}
+function reset() {
+  state.rows = []; state.columns = 0; state.displayed = 0;
+  $('rows').textContent = '0'; $('cols').textContent = '0'; $('separator').textContent = 'Ayırıcı: —';
+  $('head').replaceChildren(); $('body').replaceChildren();
+  $('empty').hidden = false; $('error').hidden = true; $('table-wrap').hidden = true;
+  $('copy').disabled = true; $('more').hidden = true; $('note').textContent = 'Henüz CSV verisi yok.';
+}
+function addRows() {
+  const end = Math.min(state.displayed + pageSize, state.rows.length - 1);
+  const fragment = document.createDocumentFragment();
+  for (let i = state.displayed; i < end; i++) {
+    const row = state.rows[i + 1], tr = document.createElement('tr');
+    const number = document.createElement('td'); number.className = 'index'; number.textContent = String(i + 1); tr.appendChild(number);
+    for (let j = 0; j < state.columns; j++) {
+      const td = document.createElement('td'); td.textContent = row[j] ?? ''; td.title = row[j] ?? ''; tr.appendChild(td);
+    }
+    fragment.appendChild(tr);
+  }
+  $('body').appendChild(fragment); state.displayed = end;
+  $('more').hidden = end >= state.rows.length - 1;
+  $('note').textContent = $('more').hidden ? 'Tüm satırlar görüntüleniyor.' : end.toLocaleString('tr-TR') + ' satır gösteriliyor; daha fazlası için butona bas.';
+}
+function render() {
+  if (!$('csv').value.trim()) { reset(); return; }
+  let parsed;
+  try {
+    parsed = parseCSV($('csv').value, $('delimiter').value === 'tab' ? '\t' : $('delimiter').value);
+  } catch (e) {
+    reset(); $('empty').hidden = true; $('error').hidden = false; $('error').textContent = e.message;
+    $('note').textContent = 'CSV içeriğini kontrol et.'; return;
+  }
+  if (!parsed.rows.length) { reset(); return; }
+  state.rows = parsed.rows;
+  state.columns = parsed.rows.reduce((max, row) => Math.max(max, row.length), 0);
+  state.displayed = 0;
+  $('rows').textContent = (parsed.rows.length - 1).toLocaleString('tr-TR');
+  $('cols').textContent = state.columns.toLocaleString('tr-TR');
+  $('separator').textContent = 'Ayırıcı: ' + ({',':'Virgül',';':'Noktalı virgül','\t':'Sekme','|':'Dikey çizgi'}[parsed.delimiter] || '—');
+  $('empty').hidden = true; $('error').hidden = true; $('table-wrap').hidden = false; $('copy').disabled = false;
+  const header = document.createElement('tr');
+  const n = document.createElement('th'); n.className = 'index'; n.scope = 'col'; n.textContent = '#'; header.appendChild(n);
+  for (let col = 0; col < state.columns; col++) {
+    const th = document.createElement('th'); th.scope = 'col'; th.textContent = parsed.rows[0][col] || 'Sütun ' + (col + 1); header.appendChild(th);
+  }
+  $('head').replaceChildren(header); $('body').replaceChildren(); addRows();
+  if (parsed.rows.length === 1) $('note').textContent = 'Başlık hazır; veri satırı henüz yok.';
+}
+$('csv').addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(render, 130); });
+$('delimiter').addEventListener('change', render);
+$('clear').addEventListener('click', () => { $('csv').value = ''; reset(); $('csv').focus(); });
+$('sample').addEventListener('click', () => {
+  $('csv').value = ['Ad,Şehir,Departman,Açıklama', 'Ayşe Yılmaz,Ankara,Yazılım,"Frontend, Backend"', 'Mehmet Demir,İstanbul,Operasyon,Sistem mühendisi', 'Zeynep Kaya,İzmir,Tasarım,Ürün tasarımı'].join('\n');
+  $('delimiter').value = 'auto'; render();
+});
+$('more').addEventListener('click', addRows);
+$('copy').addEventListener('click', async () => {
+  if (!state.rows.length) return;
+  const tsv = state.rows.map(row => Array.from({length: state.columns}, (_, i) => (row[i] ?? '').replace(/\t/g, ' ').replace(/\r?\n/g, ' ')).join('\t')).join('\n');
+  try {
+    await navigator.clipboard.writeText(tsv);
+    $('copy').textContent = 'Kopyalandı';
+    setTimeout(() => { $('copy').textContent = 'Tabloyu kopyala'; }, 1700);
+  } catch { $('note').textContent = 'Panoya kopyalanamadı. Tarayıcı izinlerini kontrol et.'; }
+});
+reset();
+</script>
+</body>
+</html>
