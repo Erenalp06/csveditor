@@ -33,6 +33,20 @@
     table{border-collapse:separate;border-spacing:0;width:100%;font-size:12px;text-align:left}th,td{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:350px;padding:12px 15px;border-right:1px solid #f0f2f6;border-bottom:1px solid #ebeff5}
     thead th{position:sticky;top:0;z-index:2;background:#f8faff;color:#51607c;font-weight:750}td{color:#526178}tbody tr:nth-child(even){background:#fbfcff}tbody tr:hover{background:#f3f5ff}
     .index{width:52px;min-width:52px;max-width:52px;position:sticky;left:0;text-align:center;z-index:1;color:#9da8b9;background:#fff;font-weight:600}thead .index{z-index:3;background:#f8faff}tbody tr:nth-child(even) .index{background:#fbfcff}
+    /* Tam ekran: tabloyu tarayicinin tum kullanim alanina yayar. */
+    body.table-expanded{overflow:hidden}
+    .preview-expanded{position:fixed!important;inset:0!important;z-index:1000;width:100vw;height:100vh;height:100dvh;min-height:0!important;max-height:none;border:0;border-radius:0;box-shadow:none}
+    .preview-expanded .panel-top{flex:0 0 auto;min-height:86px;padding:16px 24px}
+    .preview-expanded .meta{flex:0 0 auto}
+    .preview-expanded .result{flex:1 1 auto;min-height:0;overflow:hidden}
+    .preview-expanded .table-wrap{height:100%;min-height:0;max-height:none;overflow:auto;overscroll-behavior:contain}
+    .preview-expanded table{min-width:100%;width:max-content}
+    .preview-expanded .panel-bottom{flex:0 0 auto}
+    .preview-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .fullscreen-button{display:inline-flex;align-items:center;justify-content:center;gap:7px}
+    .fullscreen-button svg{width:15px;height:15px;flex-shrink:0}
+    .preview-expanded .fullscreen-button{background:#e9edff;color:#3d51d0}
+    @media(max-width:560px){.preview-expanded .panel-top{min-height:82px;padding:12px 14px}.preview-expanded .panel-top .description{display:none}.preview-expanded .meta{padding:9px 14px}.preview-expanded .panel-bottom{padding:10px 14px}.preview-actions{gap:5px}.preview-actions button{padding:9px 10px}}
     .footer{text-align:center;padding-top:22px;font-size:11px;color:#9ba7b8}
     .sr-only{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
     @media(max-width:970px){main{grid-template-columns:1fr;min-height:0}.panel{min-height:420px}.editor-wrap{min-height:290px}.table-wrap{max-height:490px}}
@@ -48,8 +62,8 @@
         <div class="editor-wrap"><label class="sr-only" for="csv">CSV içeriği</label><textarea id="csv" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="ad,şehir,meslek&#10;Ayşe,Ankara,Mühendis&#10;Mehmet,İstanbul,Tasarımcı"></textarea></div>
         <div class="panel-bottom"><span class="muted">İlk satır sütun başlığı olarak kullanılır.</span><div class="controls"><button class="ghost" id="sample" type="button">Örnek yükle</button><button class="ghost" id="clear" type="button">Temizle</button></div></div>
       </section>
-      <section class="panel" aria-labelledby="table-title">
-        <div class="panel-top"><div><div class="eyebrow">02 / ÖNİZLEME</div><h2 id="table-title">Tablo görünümü</h2><p class="description">CSV içeriğinin düzenli tablo hali.</p></div><button class="main" type="button" id="copy" disabled>Tabloyu kopyala</button></div>
+      <section class="panel" id="preview-panel" aria-labelledby="table-title">
+        <div class="panel-top"><div><div class="eyebrow">02 / ÖNİZLEME</div><h2 id="table-title">Tablo görünümü</h2><p class="description">CSV içeriğinin düzenli tablo hali.</p></div><div class="preview-actions"><button class="ghost fullscreen-button" type="button" id="fullscreen" aria-pressed="false" title="Tabloyu tam ekranda göster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/></svg><span id="fullscreen-label">Tam ekran</span></button><button class="main" type="button" id="copy" disabled>Tabloyu kopyala</button></div></div>
         <div class="meta" aria-live="polite"><span><strong id="rows">0</strong> veri satırı</span><span class="divider"></span><span><strong id="cols">0</strong> sütun</span><span id="separator" class="mode">Ayırıcı: —</span></div>
         <div class="result"><div id="empty" class="empty"><div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><h3>Tablon burada görünecek</h3><p>Soldaki alana CSV verisini yapıştırarak başlayabilirsin.</p></div><div id="error" class="error" role="alert" hidden></div><div id="table-wrap" class="table-wrap" hidden><table aria-label="CSV tablo önizlemesi"><thead id="head"></thead><tbody id="body"></tbody></table></div></div>
         <div class="panel-bottom"><span class="muted" id="note" aria-live="polite">Henüz CSV verisi yok.</span><button class="ghost" type="button" id="more" hidden>400 satır daha göster</button></div>
@@ -176,6 +190,47 @@ function render() {
   $('head').replaceChildren(header); $('body').replaceChildren(); addRows();
   if (parsed.rows.length === 1) $('note').textContent = 'Başlık hazır; veri satırı henüz yok.';
 }
+// Gercek tarayici tam ekrani kullanilir; desteklenmezse gorunum ekrani kaplar.
+let nativeFullscreenActive = false;
+function updateFullscreenView(expanded) {
+  $('preview-panel').classList.toggle('preview-expanded', expanded);
+  document.body.classList.toggle('table-expanded', expanded);
+  $('fullscreen').setAttribute('aria-pressed', String(expanded));
+  $('fullscreen-label').textContent = expanded ? 'Tam ekrandan çık' : 'Tam ekran';
+  $('fullscreen').title = expanded ? 'Normal görünüme dön (Esc)' : 'Tabloyu tam ekranda göster';
+}
+async function togglePreviewFullscreen() {
+  const panel = $('preview-panel');
+  if (panel.classList.contains('preview-expanded')) {
+    nativeFullscreenActive = false;
+    updateFullscreenView(false);
+    if (document.fullscreenElement === panel && document.exitFullscreen) {
+      try { await document.exitFullscreen(); } catch (error) { /* CSS gorunumu kapandi */ }
+    }
+    return;
+  }
+  updateFullscreenView(true);
+  if (panel.requestFullscreen && document.fullscreenEnabled) {
+    try { await panel.requestFullscreen(); nativeFullscreenActive = true; }
+    catch (error) { /* Tarayici engellerse tam ekran CSS ile surer */ }
+  }
+}
+$('fullscreen').addEventListener('click', togglePreviewFullscreen);
+document.addEventListener('fullscreenchange', () => {
+  if (nativeFullscreenActive && document.fullscreenElement !== $('preview-panel')) {
+    nativeFullscreenActive = false;
+    updateFullscreenView(false);
+  }
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && $('preview-panel').classList.contains('preview-expanded')) {
+    if (document.fullscreenElement !== $('preview-panel')) {
+      nativeFullscreenActive = false;
+      updateFullscreenView(false);
+    }
+    // Gercek tarayici tam ekraninda Escape cikisini tarayici kendisi yonetir.
+  }
+});
 $('csv').addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(render, 130); });
 $('delimiter').addEventListener('change', render);
 $('clear').addEventListener('click', () => { $('csv').value = ''; reset(); $('csv').focus(); });
